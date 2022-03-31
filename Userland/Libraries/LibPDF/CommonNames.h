@@ -10,6 +10,7 @@
 
 #define ENUMERATE_COMMON_NAMES(A) \
     A(AIS)                        \
+    A(Alternate)                  \
     A(ASCII85Decode)              \
     A(ASCIIHexDecode)             \
     A(BG)                         \
@@ -22,13 +23,17 @@
     A(CA)                         \
     A(CCITTFaxDecode)             \
     A(CalRGB)                     \
+    A(CIDSystemInfo)              \
+    A(CIDToGIDMap)                \
     A(ColorSpace)                 \
     A(Contents)                   \
     A(Count)                      \
     A(CropBox)                    \
     A(Crypt)                      \
     A(D)                          \
+    A(DW)                         \
     A(DCTDecode)                  \
+    A(DescendantFonts)            \
     A(Dest)                       \
     A(Dests)                      \
     A(DeviceCMYK)                 \
@@ -63,6 +68,7 @@
     A(H)                          \
     A(HT)                         \
     A(HTO)                        \
+    A(ICCBased)                   \
     A(ID)                         \
     A(JBIG2Decode)                \
     A(JPXDecode)                  \
@@ -79,11 +85,13 @@
     A(ML)                         \
     A(Matrix)                     \
     A(MediaBox)                   \
+    A(MissingWidth)               \
     A(N)                          \
     A(Next)                       \
     A(O)                          \
     A(OP)                         \
     A(OPM)                        \
+    A(Ordering)                   \
     A(Outlines)                   \
     A(P)                          \
     A(Pages)                      \
@@ -92,6 +100,7 @@
     A(Prev)                       \
     A(R)                          \
     A(RI)                         \
+    A(Registry)                   \
     A(Resources)                  \
     A(Root)                       \
     A(Rotate)                     \
@@ -100,6 +109,7 @@
     A(SM)                         \
     A(SMask)                      \
     A(Subtype)                    \
+    A(Supplement)                 \
     A(T)                          \
     A(TK)                         \
     A(TR)                         \
@@ -111,6 +121,7 @@
     A(UCR)                        \
     A(UseBlackPTComp)             \
     A(UserUnit)                   \
+    A(W)                          \
     A(WhitePoint)                 \
     A(Widths)                     \
     A(XYZ)                        \
@@ -124,6 +135,8 @@ public:
 #define ENUMERATE(name) static FlyString name;
     ENUMERATE_COMMON_NAMES(ENUMERATE)
 #undef ENUMERATE
+
+    static FlyString IdentityH;
 };
 
 }

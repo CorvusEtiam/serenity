@@ -817,25 +817,42 @@ Bytecode::CodeGenerationErrorOr<void> ObjectExpression::generate_bytecode(Byteco
     generator.emit<Bytecode::Op::Store>(object_reg);
 
     for (auto& property : m_properties) {
-        if (property.type() != ObjectProperty::Type::KeyValue)
-            return Bytecode::CodeGenerationError {
-                this,
-                "Unimplemented property kind"sv,
-            };
+        Bytecode::Op::PropertyKind property_kind;
+        switch (property.type()) {
+        case ObjectProperty::Type::KeyValue:
+            property_kind = Bytecode::Op::PropertyKind::KeyValue;
+            break;
+        case ObjectProperty::Type::Getter:
+            property_kind = Bytecode::Op::PropertyKind::Getter;
+            break;
+        case ObjectProperty::Type::Setter:
+            property_kind = Bytecode::Op::PropertyKind::Setter;
+            break;
+        case ObjectProperty::Type::Spread:
+            property_kind = Bytecode::Op::PropertyKind::Spread;
+            break;
+        case ObjectProperty::Type::ProtoSetter:
+            property_kind = Bytecode::Op::PropertyKind::ProtoSetter;
+            break;
+        }
 
         if (is<StringLiteral>(property.key())) {
             auto& string_literal = static_cast<StringLiteral const&>(property.key());
             Bytecode::IdentifierTableIndex key_name = generator.intern_identifier(string_literal.value());
 
-            TRY(property.value().generate_bytecode(generator));
-            generator.emit<Bytecode::Op::PutById>(object_reg, key_name);
+            if (property_kind != Bytecode::Op::PropertyKind::Spread)
+                TRY(property.value().generate_bytecode(generator));
+
+            generator.emit<Bytecode::Op::PutById>(object_reg, key_name, property_kind);
         } else {
             TRY(property.key().generate_bytecode(generator));
             auto property_reg = generator.allocate_register();
             generator.emit<Bytecode::Op::Store>(property_reg);
 
-            TRY(property.value().generate_bytecode(generator));
-            generator.emit<Bytecode::Op::PutByValue>(object_reg, property_reg);
+            if (property_kind != Bytecode::Op::PropertyKind::Spread)
+                TRY(property.value().generate_bytecode(generator));
+
+            generator.emit<Bytecode::Op::PutByValue>(object_reg, property_reg, property_kind);
         }
     }
 
@@ -1041,10 +1058,7 @@ static Bytecode::CodeGenerationErrorOr<void> generate_array_binding_pattern_byte
                 return generate_binding_pattern_bytecode(generator, pattern, initialization_mode, target_reg);
             },
             [&](NonnullRefPtr<MemberExpression> const& expr) -> Bytecode::CodeGenerationErrorOr<void> {
-                return Bytecode::CodeGenerationError {
-                    expr.ptr(),
-                    "Unimplemented alias mode: MemberExpression"sv,
-                };
+                return generator.emit_store_to_reference(*expr);
             });
     };
 
@@ -1896,7 +1910,12 @@ static Bytecode::CodeGenerationErrorOr<void> for_in_of_body_evaluation(Bytecode:
                 VERIFY(declaration.declarations().size() == 1);
                 TRY(assign_accumulator_to_variable_declarator(generator, declaration.declarations().first(), declaration));
             } else {
-                TRY(generator.emit_store_to_reference(*lhs.get<NonnullRefPtr<ASTNode>>()));
+                if (auto ptr = lhs.get_pointer<NonnullRefPtr<ASTNode>>()) {
+                    TRY(generator.emit_store_to_reference(**ptr));
+                } else {
+                    auto& binding_pattern = lhs.get<NonnullRefPtr<BindingPattern>>();
+                    TRY(generate_binding_pattern_bytecode(generator, *binding_pattern, Bytecode::Op::SetVariable::InitializationMode::Set, Bytecode::Register::accumulator()));
+                }
             }
         }
     }

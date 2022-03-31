@@ -5,7 +5,10 @@ set(SOURCES
     Encoding.cpp
     Encryption.cpp
     Filter.cpp
-    Fonts.cpp
+    Fonts/PDFFont.cpp
+    Fonts/TrueTypeFont.cpp
+    Fonts/Type0Font.cpp
+    Fonts/Type1Font.cpp
     ObjectDerivatives.cpp
     Parser.cpp
     Renderer.cpp
