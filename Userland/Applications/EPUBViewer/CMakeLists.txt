@@ -17,4 +17,4 @@ set(SOURCES
 )
 
 serenity_app(EPUBViewer ICON app-hex-editor)
-target_link_libraries(EPUBViewer LibGUI LibMain LibFileSystemAccessClient)
+target_link_libraries(EPUBViewer LibMain LibCore LibArchive LibCompress)
