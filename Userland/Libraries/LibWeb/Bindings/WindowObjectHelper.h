@@ -219,6 +219,8 @@
 #include <LibWeb/Bindings/HTMLVideoElementPrototype.h>
 #include <LibWeb/Bindings/HistoryConstructor.h>
 #include <LibWeb/Bindings/HistoryPrototype.h>
+#include <LibWeb/Bindings/IdleDeadlineConstructor.h>
+#include <LibWeb/Bindings/IdleDeadlinePrototype.h>
 #include <LibWeb/Bindings/ImageConstructor.h>
 #include <LibWeb/Bindings/ImageDataConstructor.h>
 #include <LibWeb/Bindings/ImageDataPrototype.h>
@@ -242,6 +244,7 @@
 #include <LibWeb/Bindings/NodeListConstructor.h>
 #include <LibWeb/Bindings/NodeListPrototype.h>
 #include <LibWeb/Bindings/NodePrototype.h>
+#include <LibWeb/Bindings/OptionConstructor.h>
 #include <LibWeb/Bindings/PageTransitionEventConstructor.h>
 #include <LibWeb/Bindings/PageTransitionEventPrototype.h>
 #include <LibWeb/Bindings/PerformanceConstructor.h>
@@ -442,6 +445,7 @@
     ADD_WINDOW_OBJECT_INTERFACE(HTMLUListElement)                                                   \
     ADD_WINDOW_OBJECT_INTERFACE(HTMLUnknownElement)                                                 \
     ADD_WINDOW_OBJECT_INTERFACE(HTMLVideoElement)                                                   \
+    ADD_WINDOW_OBJECT_INTERFACE(IdleDeadline)                                                       \
     ADD_WINDOW_OBJECT_INTERFACE(ImageData)                                                          \
     ADD_WINDOW_OBJECT_INTERFACE(IntersectionObserver)                                               \
     ADD_WINDOW_OBJECT_INTERFACE(KeyboardEvent)                                                      \
@@ -495,4 +499,5 @@
     ADD_WINDOW_OBJECT_INTERFACE(XMLHttpRequest)                                                     \
     ADD_WINDOW_OBJECT_INTERFACE(XMLHttpRequestEventTarget)                                          \
     ADD_WINDOW_OBJECT_CONSTRUCTOR_AND_PROTOTYPE(Audio, AudioConstructor, HTMLAudioElementPrototype) \
-    ADD_WINDOW_OBJECT_CONSTRUCTOR_AND_PROTOTYPE(Image, ImageConstructor, HTMLImageElementPrototype)
+    ADD_WINDOW_OBJECT_CONSTRUCTOR_AND_PROTOTYPE(Image, ImageConstructor, HTMLImageElementPrototype) \
+    ADD_WINDOW_OBJECT_CONSTRUCTOR_AND_PROTOTYPE(Option, OptionConstructor, HTMLOptionElementPrototype)

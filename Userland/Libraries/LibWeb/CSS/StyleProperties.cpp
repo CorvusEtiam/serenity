@@ -15,7 +15,7 @@
 
 namespace Web::CSS {
 
-StyleProperties::StyleProperties(const StyleProperties& other)
+StyleProperties::StyleProperties(StyleProperties const& other)
     : m_property_values(other.m_property_values)
 {
     if (other.m_font) {
@@ -263,6 +263,14 @@ float StyleProperties::flex_shrink() const
     return value.value()->to_number();
 }
 
+int StyleProperties::order() const
+{
+    auto value = property(CSS::PropertyID::Order);
+    if (!value.has_value() || !value.value()->has_integer())
+        return 0;
+    return value.value()->to_integer();
+}
+
 Optional<CSS::ImageRendering> StyleProperties::image_rendering() const
 {
     auto value = property(CSS::PropertyID::ImageRendering);
@@ -412,7 +420,7 @@ Optional<CSS::Position> StyleProperties::position() const
     }
 }
 
-bool StyleProperties::operator==(const StyleProperties& other) const
+bool StyleProperties::operator==(StyleProperties const& other) const
 {
     if (m_property_values.size() != other.m_property_values.size())
         return false;

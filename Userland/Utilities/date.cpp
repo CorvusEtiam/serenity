@@ -13,13 +13,13 @@
 
 ErrorOr<int> serenity_main(Main::Arguments arguments)
 {
-    TRY(Core::System::pledge("stdio settime rpath", nullptr));
+    TRY(Core::System::pledge("stdio settime rpath"));
 
     bool print_unix_date = false;
     bool print_iso_8601 = false;
     bool print_rfc_3339 = false;
     bool print_rfc_5322 = false;
-    const char* set_date = nullptr;
+    char const* set_date = nullptr;
     StringView format_string;
 
     Core::ArgsParser args_parser;

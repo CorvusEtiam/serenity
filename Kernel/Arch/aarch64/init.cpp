@@ -93,8 +93,21 @@ void __stack_chk_fail()
     Prekernel::halt();
 }
 
-[[noreturn]] void __assertion_failed(char const*, char const*, unsigned int, char const*)
+[[noreturn]] void __assertion_failed(char const* msg, char const* file, unsigned line, char const* func)
 {
+    auto& uart = Prekernel::UART::the();
+
+    uart.print_str("\r\n\r\nASSERTION FAILED: ");
+    uart.print_str(msg);
+
+    uart.print_str("\r\n");
+    uart.print_str(file);
+    uart.print_str(":");
+    uart.print_num(line);
+
+    uart.print_str(" in ");
+    uart.print_str(func);
+
     Prekernel::halt();
 }
 
@@ -164,7 +177,7 @@ extern "C" const u32 serenity_boot_logo_size;
 
 static void draw_logo()
 {
-    Prekernel::BootPPMParser logo_parser(reinterpret_cast<const u8*>(&serenity_boot_logo_start), serenity_boot_logo_size);
+    Prekernel::BootPPMParser logo_parser(reinterpret_cast<u8 const*>(&serenity_boot_logo_start), serenity_boot_logo_size);
     if (!logo_parser.parse()) {
         Prekernel::warnln("Invalid boot logo.");
         return;

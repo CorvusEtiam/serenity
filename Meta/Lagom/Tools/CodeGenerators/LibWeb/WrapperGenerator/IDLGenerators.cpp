@@ -202,12 +202,10 @@ static void generate_include_for(auto& generator, auto& path)
 )~~~");
 }
 
-static void emit_includes_for_all_imports(auto& interface, auto& generator, bool is_header, bool is_iterator = false)
+static void emit_includes_for_all_imports(auto& interface, auto& generator, bool is_iterator = false)
 {
     Queue<RemoveCVReference<decltype(interface)> const*> interfaces;
     HashTable<String> paths_imported;
-    if (is_header)
-        paths_imported.set(interface.module_own_path);
 
     interfaces.enqueue(&interface);
 
@@ -560,7 +558,16 @@ static void generate_to_cpp(SourceGenerator& generator, ParameterType& parameter
     } else if (interface.enumerations.contains(parameter.type->name)) {
         auto enum_generator = scoped_generator.fork();
         auto& enumeration = interface.enumerations.find(parameter.type->name)->value;
-        enum_generator.set("enum.default.cpp_value", *enumeration.translated_cpp_names.get(optional_default_value.value_or(enumeration.first_member)));
+        StringView enum_member_name;
+        if (optional_default_value.has_value()) {
+            VERIFY(optional_default_value->length() >= 2 && (*optional_default_value)[0] == '"' && (*optional_default_value)[optional_default_value->length() - 1] == '"');
+            enum_member_name = optional_default_value->substring_view(1, optional_default_value->length() - 2);
+        } else {
+            enum_member_name = enumeration.first_member;
+        }
+        auto default_value_cpp_name = enumeration.translated_cpp_names.get(enum_member_name);
+        VERIFY(default_value_cpp_name.has_value());
+        enum_generator.set("enum.default.cpp_value", *default_value_cpp_name);
         enum_generator.set("js_name.as_string", String::formatted("{}{}_string", enum_generator.get("js_name"), enum_generator.get("js_suffix")));
         enum_generator.append(R"~~~(
     @parameter.type.name@ @cpp_name@ { @parameter.type.name@::@enum.default.cpp_value@ };
@@ -1139,6 +1146,10 @@ static void generate_to_cpp(SourceGenerator& generator, ParameterType& parameter
                         union_generator.append(R"~~~(
     @union_type@ @cpp_name@ = @js_name@@js_suffix@.is_undefined() ? TRY(@js_name@@js_suffix@_to_dictionary(@js_name@@js_suffix@)) : TRY(@js_name@@js_suffix@_to_variant(@js_name@@js_suffix@));
 )~~~");
+                    } else if (optional_default_value->to_int().has_value() || optional_default_value->to_uint().has_value()) {
+                        union_generator.append(R"~~~(
+    @union_type@ @cpp_name@ = @js_name@@js_suffix@.is_undefined() ? @parameter.optional_default_value@ : TRY(@js_name@@js_suffix@_to_variant(@js_name@@js_suffix@));
+)~~~");
                     } else {
                         TODO();
                     }
@@ -1574,7 +1585,6 @@ void generate_header(IDL::Interface const& interface)
     for (auto& path : interface.required_imported_paths)
         generate_include_for(generator, path);
 
-    emit_includes_for_all_imports(interface, generator, true);
     generator.set("name", interface.name);
     generator.set("fully_qualified_name", interface.fully_qualified_name);
     generator.set("wrapper_base_class", interface.wrapper_base_class);
@@ -1738,7 +1748,7 @@ void generate_implementation(IDL::Interface const& interface)
 #include <LibWeb/Bindings/WindowObject.h>
 )~~~");
 
-    emit_includes_for_all_imports(interface, generator, false);
+    emit_includes_for_all_imports(interface, generator);
 
     generator.append(R"~~~(
 // FIXME: This is a total hack until we can figure out the namespace for a given type somehow.
@@ -2647,6 +2657,14 @@ void generate_constructor_implementation(IDL::Interface const& interface)
 #    include <LibWeb/URL/@name@.h>
 #endif
 
+)~~~");
+
+    for (auto& path : interface.required_imported_paths)
+        generate_include_for(generator, path);
+
+    emit_includes_for_all_imports(interface, generator, interface.pair_iterator_types.has_value());
+
+    generator.append(R"~~~(
 // FIXME: This is a total hack until we can figure out the namespace for a given type somehow.
 using namespace Web::CSS;
 using namespace Web::DOM;
@@ -2917,7 +2935,7 @@ void generate_prototype_implementation(IDL::Interface const& interface)
     for (auto& path : interface.required_imported_paths)
         generate_include_for(generator, path);
 
-    emit_includes_for_all_imports(interface, generator, false, interface.pair_iterator_types.has_value());
+    emit_includes_for_all_imports(interface, generator, interface.pair_iterator_types.has_value());
 
     generator.append(R"~~~(
 
@@ -3365,7 +3383,7 @@ void generate_iterator_implementation(IDL::Interface const& interface)
     for (auto& path : interface.required_imported_paths)
         generate_include_for(generator, path);
 
-    emit_includes_for_all_imports(interface, generator, false, true);
+    emit_includes_for_all_imports(interface, generator, true);
 
     generator.append(R"~~~(
 
@@ -3478,7 +3496,7 @@ void generate_iterator_prototype_implementation(IDL::Interface const& interface)
 #endif
 )~~~");
 
-    emit_includes_for_all_imports(interface, generator, false, true);
+    emit_includes_for_all_imports(interface, generator, true);
 
     generator.append(R"~~~(
 // FIXME: This is a total hack until we can figure out the namespace for a given type somehow.

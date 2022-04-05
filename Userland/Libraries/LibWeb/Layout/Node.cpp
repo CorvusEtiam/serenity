@@ -54,7 +54,7 @@ bool Node::can_contain_boxes_with_position_absolute() const
     return computed_values().position() != CSS::Position::Static || is<InitialContainingBlock>(*this);
 }
 
-const BlockContainer* Node::containing_block() const
+BlockContainer const* Node::containing_block() const
 {
     if (is<TextNode>(*this))
         return first_ancestor_of_type<BlockContainer>();
@@ -67,7 +67,7 @@ const BlockContainer* Node::containing_block() const
             ancestor = ancestor->parent();
         while (ancestor && (!is<BlockContainer>(*ancestor) || ancestor->is_anonymous()))
             ancestor = ancestor->containing_block();
-        return static_cast<const BlockContainer*>(ancestor);
+        return static_cast<BlockContainer const*>(ancestor);
     }
 
     if (position == CSS::Position::Fixed)
@@ -102,7 +102,7 @@ HTML::BrowsingContext& Node::browsing_context()
     return *document().browsing_context();
 }
 
-const InitialContainingBlock& Node::root() const
+InitialContainingBlock const& Node::root() const
 {
     VERIFY(document().layout_node());
     return *document().layout_node();
@@ -401,6 +401,7 @@ void NodeWithStyle::apply_style(const CSS::StyleProperties& computed_style)
 
     computed_values.set_flex_grow(computed_style.flex_grow());
     computed_values.set_flex_shrink(computed_style.flex_shrink());
+    computed_values.set_order(computed_style.order());
 
     auto justify_content = computed_style.justify_content();
     if (justify_content.has_value())

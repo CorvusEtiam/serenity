@@ -23,7 +23,7 @@ HTMLObjectElement::HTMLObjectElement(DOM::Document& document, DOM::QualifiedName
 
 HTMLObjectElement::~HTMLObjectElement() = default;
 
-void HTMLObjectElement::parse_attribute(const FlyString& name, const String& value)
+void HTMLObjectElement::parse_attribute(FlyString const& name, String const& value)
 {
     BrowsingContextContainer::parse_attribute(name, value);
 
@@ -216,6 +216,10 @@ void HTMLObjectElement::run_object_representation_handler_steps(Optional<String>
         // If the object element's nested browsing context is null, then create a new nested browsing context for the element.
         if (!m_nested_browsing_context)
             create_new_nested_browsing_context();
+
+        // NOTE: Creating a new nested browsing context can fail if the document is not attached to a browsing context
+        if (!m_nested_browsing_context)
+            return;
 
         // If the URL of the given resource does not match about:blank, then navigate the element's nested browsing context to that resource, with historyHandling set to "replace" and the source browsing context set to the object element's node document's browsing context. (The data attribute of the object element doesn't get updated if the browsing context gets further navigated to other locations.)
         if (auto const& url = resource()->url(); url != "about:blank"sv)

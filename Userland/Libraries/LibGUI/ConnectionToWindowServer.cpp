@@ -68,7 +68,7 @@ void ConnectionToWindowServer::update_system_theme(Core::AnonymousBuffer const& 
     });
 }
 
-void ConnectionToWindowServer::update_system_fonts(const String& default_font_query, const String& fixed_width_font_query)
+void ConnectionToWindowServer::update_system_fonts(String const& default_font_query, String const& fixed_width_font_query)
 {
     Gfx::FontDatabase::set_default_font_query(default_font_query);
     Gfx::FontDatabase::set_fixed_width_font_query(fixed_width_font_query);
@@ -372,10 +372,10 @@ void ConnectionToWindowServer::drag_cancelled()
     Application::the()->notify_drag_cancelled({});
 }
 
-void ConnectionToWindowServer::window_state_changed(i32 window_id, bool minimized, bool occluded)
+void ConnectionToWindowServer::window_state_changed(i32 window_id, bool minimized, bool maximized, bool occluded)
 {
     if (auto* window = Window::from_window_id(window_id))
-        window->notify_state_changed({}, minimized, occluded);
+        window->notify_state_changed({}, minimized, maximized, occluded);
 }
 
 void ConnectionToWindowServer::display_link_notification()

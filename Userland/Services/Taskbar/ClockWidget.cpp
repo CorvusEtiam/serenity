@@ -5,6 +5,7 @@
  */
 
 #include "ClockWidget.h"
+#include <LibConfig/Client.h>
 #include <LibCore/Process.h>
 #include <LibGUI/Painter.h>
 #include <LibGUI/SeparatorWidget.h>
@@ -20,9 +21,7 @@ ClockWidget::ClockWidget()
     set_frame_shadow(Gfx::FrameShadow::Sunken);
     set_frame_thickness(1);
 
-    m_time_width = font().width("22:22:22");
-
-    set_fixed_size(m_time_width + 20, 21);
+    update_format(Config::read_string("Taskbar", "Clock", "TimeFormat", "%T"));
 
     m_timer = add<Core::Timer>(1000, [this] {
         static time_t last_update_time;
@@ -159,21 +158,28 @@ ClockWidget::ClockWidget()
     };
 }
 
+void ClockWidget::update_format(String const& format)
+{
+    m_time_format = format;
+    m_time_width = font().width(Core::DateTime::create(122, 2, 22, 22, 22, 22).to_string(format));
+    set_fixed_size(m_time_width + 20, 21);
+}
+
 void ClockWidget::paint_event(GUI::PaintEvent& event)
 {
     GUI::Frame::paint_event(event);
-    auto time_text = Core::DateTime::now().to_string("%T");
+    auto time_text = Core::DateTime::now().to_string(m_time_format);
     GUI::Painter painter(*this);
     painter.add_clip_rect(frame_inner_rect());
 
     // Render string center-left aligned, but attempt to center the string based on a constant
     // "ideal" time string (i.e., the same one used to size this widget in the initializer).
     // This prevents the rest of the string from shifting around while seconds tick.
-    const Gfx::Font& font = Gfx::FontDatabase::default_font();
-    const int frame_width = frame_thickness();
-    const int ideal_width = m_time_width;
-    const int widget_width = max_width();
-    const int translation_x = (widget_width - ideal_width) / 2 - frame_width;
+    Gfx::Font const& font = Gfx::FontDatabase::default_font();
+    int const frame_width = frame_thickness();
+    int const ideal_width = m_time_width;
+    int const widget_width = max_width();
+    int const translation_x = (widget_width - ideal_width) / 2 - frame_width;
 
     painter.draw_text(frame_inner_rect().translated(translation_x, frame_width), time_text, font, Gfx::TextAlignment::CenterLeft, palette().window_text());
 }

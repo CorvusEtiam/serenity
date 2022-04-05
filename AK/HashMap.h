@@ -22,8 +22,8 @@ private:
     };
 
     struct EntryTraits {
-        static unsigned hash(const Entry& entry) { return KeyTraits::hash(entry.key); }
-        static bool equals(const Entry& a, const Entry& b) { return KeyTraits::equals(a.key, b.key); }
+        static unsigned hash(Entry const& entry) { return KeyTraits::hash(entry.key); }
+        static bool equals(Entry const& a, Entry const& b) { return KeyTraits::equals(a.key, b.key); }
     };
 
 public:
@@ -127,7 +127,7 @@ public:
     void ensure_capacity(size_t capacity) { m_table.ensure_capacity(capacity); }
     ErrorOr<void> try_ensure_capacity(size_t capacity) { return m_table.try_ensure_capacity(capacity); }
 
-    Optional<typename Traits<V>::PeekType> get(const K& key) const requires(!IsPointer<typename Traits<V>::PeekType>)
+    Optional<typename Traits<V>::ConstPeekType> get(const K& key) const requires(!IsPointer<typename Traits<V>::PeekType>)
     {
         auto it = find(key);
         if (it == end())
@@ -152,7 +152,8 @@ public:
     }
 
     template<Concepts::HashCompatible<K> Key>
-    requires(IsSame<KeyTraits, Traits<K>>) Optional<typename Traits<V>::PeekType> get(const Key& key) const requires(!IsPointer<typename Traits<V>::PeekType>)
+    requires(IsSame<KeyTraits, Traits<K>>) Optional<typename Traits<V>::PeekType> get(Key const& key)
+    const requires(!IsPointer<typename Traits<V>::PeekType>)
     {
         auto it = find(key);
         if (it == end())
@@ -161,7 +162,8 @@ public:
     }
 
     template<Concepts::HashCompatible<K> Key>
-    requires(IsSame<KeyTraits, Traits<K>>) Optional<typename Traits<V>::ConstPeekType> get(const Key& key) const requires(IsPointer<typename Traits<V>::PeekType>)
+    requires(IsSame<KeyTraits, Traits<K>>) Optional<typename Traits<V>::ConstPeekType> get(Key const& key)
+    const requires(IsPointer<typename Traits<V>::PeekType>)
     {
         auto it = find(key);
         if (it == end())
@@ -170,7 +172,8 @@ public:
     }
 
     template<Concepts::HashCompatible<K> Key>
-    requires(IsSame<KeyTraits, Traits<K>>) Optional<typename Traits<V>::PeekType> get(const Key& key) requires(!IsConst<typename Traits<V>::PeekType>)
+    requires(IsSame<KeyTraits, Traits<K>>) Optional<typename Traits<V>::PeekType> get(Key const& key)
+    requires(!IsConst<typename Traits<V>::PeekType>)
     {
         auto it = find(key);
         if (it == end())

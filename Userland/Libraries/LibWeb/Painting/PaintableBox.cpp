@@ -43,7 +43,7 @@ PaintableWithLines::~PaintableWithLines()
 {
 }
 
-void PaintableBox::set_offset(const Gfx::FloatPoint& offset)
+void PaintableBox::set_offset(Gfx::FloatPoint const& offset)
 {
     m_offset = offset;
     // FIXME: This const_cast is gross.
@@ -324,7 +324,7 @@ static void paint_text_decoration(Gfx::Painter& painter, Layout::Node const& tex
     int line_thickness = [&] {
         CSS::Length computed_thickness = text_node.computed_values().text_decoration_thickness().resolved(text_node, CSS::Length(1, CSS::Length::Type::Em));
         if (computed_thickness.is_auto())
-            return CSS::InitialValues::text_decoration_thickness().to_px(text_node);
+            return max(glyph_height * 0.1f, 1.f);
 
         return computed_thickness.to_px(text_node);
     }();
@@ -527,7 +527,7 @@ Optional<HitTestResult> PaintableBox::hit_test(Gfx::FloatPoint const& position, 
     return {};
 }
 
-Optional<HitTestResult> PaintableWithLines::hit_test(const Gfx::FloatPoint& position, HitTestType type) const
+Optional<HitTestResult> PaintableWithLines::hit_test(Gfx::FloatPoint const& position, HitTestType type) const
 {
     if (!layout_box().children_are_inline())
         return PaintableBox::hit_test(position, type);

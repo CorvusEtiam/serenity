@@ -13,10 +13,10 @@
 
 ErrorOr<int> serenity_main(Main::Arguments arguments)
 {
-    TRY(Core::System::pledge("stdio rpath chown", nullptr));
+    TRY(Core::System::pledge("stdio rpath chown"));
 
-    const char* gid_arg = nullptr;
-    const char* path = nullptr;
+    char const* gid_arg = nullptr;
+    char const* path = nullptr;
     bool dont_follow_symlinks = false;
 
     Core::ArgsParser args_parser;

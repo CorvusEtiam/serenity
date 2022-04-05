@@ -7,6 +7,7 @@
 
 #include "InlineFormattingContext.h"
 #include <AK/Function.h>
+#include <AK/QuickSort.h>
 #include <AK/StdLibExtras.h>
 #include <LibWeb/Layout/BlockContainer.h>
 #include <LibWeb/Layout/BlockFormattingContext.h>
@@ -46,8 +47,6 @@ void FlexFormattingContext::run(Box const& run_box, LayoutMode)
     VERIFY(&run_box == &flex_container());
 
     // This implements https://www.w3.org/TR/css-flexbox-1/#layout-algorithm
-
-    // FIXME: Implement reverse and ordering.
 
     // 1. Generate anonymous flex items
     generate_anonymous_flex_items();
@@ -170,6 +169,8 @@ void FlexFormattingContext::generate_anonymous_flex_items()
     // calculations that could change that.
     // This is particularly important since we take references to the items stored in flex_items
     // later, whose addresses won't be stable if we added or removed any items.
+    HashMap<int, Vector<FlexItem>> order_item_bucket;
+
     flex_container().for_each_child_of_type<Box>([&](Box& child_box) {
         // Skip anonymous text runs that are only whitespace.
         if (child_box.is_anonymous() && !child_box.first_child_of_type<BlockContainer>()) {
@@ -192,9 +193,36 @@ void FlexFormattingContext::generate_anonymous_flex_items()
         child_box.set_flex_item(true);
         FlexItem flex_item = { child_box };
         populate_specified_margins(flex_item, m_flex_direction);
-        m_flex_items.append(move(flex_item));
+
+        auto& order_bucket = order_item_bucket.ensure(child_box.computed_values().order());
+        order_bucket.append(move(flex_item));
+
         return IterationDecision::Continue;
     });
+
+    auto keys = order_item_bucket.keys();
+
+    if (is_direction_reverse()) {
+        quick_sort(keys, [](auto& a, auto& b) { return a > b; });
+    } else {
+        quick_sort(keys, [](auto& a, auto& b) { return a < b; });
+    }
+
+    for (auto key : keys) {
+        auto order_bucket = order_item_bucket.get(key);
+        if (order_bucket.has_value()) {
+            auto items = order_bucket.value();
+            if (is_direction_reverse()) {
+                for (auto flex_item : items.in_reverse()) {
+                    m_flex_items.append(move(flex_item));
+                }
+            } else {
+                for (auto flex_item : items) {
+                    m_flex_items.append(move(flex_item));
+                }
+            }
+        }
+    }
 }
 
 bool FlexFormattingContext::has_definite_main_size(Box const& box) const

@@ -12,7 +12,6 @@
 #include <Kernel/PhysicalAddress.h>
 
 #include <AK/Platform.h>
-VALIDATE_IS_X86()
 
 namespace Kernel {
 
@@ -29,7 +28,7 @@ public:
     void clear() { m_raw = 0; }
 
     u64 raw() const { return m_raw; }
-    void copy_from(Badge<Memory::PageDirectory>, const PageDirectoryEntry& other) { m_raw = other.m_raw; }
+    void copy_from(Badge<Memory::PageDirectory>, PageDirectoryEntry const& other) { m_raw = other.m_raw; }
 
     enum Flags {
         Present = 1 << 0,
@@ -83,6 +82,7 @@ public:
     PhysicalPtr physical_page_base() const { return PhysicalAddress::physical_page_base(m_raw); }
     void set_physical_page_base(PhysicalPtr value)
     {
+        // FIXME: IS THIS PLATFORM SPECIFIC?
         m_raw &= 0x8000000000000fffULL;
         m_raw |= PhysicalAddress::physical_page_base(value);
     }

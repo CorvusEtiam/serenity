@@ -13,6 +13,7 @@ set(SOURCES
     Bindings/MainThreadVM.cpp
     Bindings/NavigatorObject.cpp
     Bindings/NodeWrapperFactory.cpp
+    Bindings/OptionConstructor.cpp
     Bindings/WindowObject.cpp
     Bindings/WindowProxy.cpp
     Bindings/Wrappable.cpp
@@ -602,83 +603,35 @@ libweb_js_wrapper(XHR/ProgressEvent)
 libweb_js_wrapper(XHR/XMLHttpRequest)
 libweb_js_wrapper(XHR/XMLHttpRequestEventTarget)
 
-add_custom_command(
-    OUTPUT CSS/MediaFeatureID.h
-    COMMAND ${CMAKE_COMMAND} -E make_directory CSS
-    COMMAND "$<TARGET_FILE:Lagom::Generate_CSS_MediaFeatureID_h>" "${CMAKE_CURRENT_SOURCE_DIR}/CSS/MediaFeatures.json" > CSS/MediaFeatureID.h.tmp
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different CSS/MediaFeatureID.h.tmp CSS/MediaFeatureID.h
-    COMMAND "${CMAKE_COMMAND}" -E remove CSS/MediaFeatureID.h.tmp
-    VERBATIM
-    DEPENDS Lagom::Generate_CSS_MediaFeatureID_h
-    MAIN_DEPENDENCY CSS/MediaFeatures.json
+invoke_generator(
+    "MediaFeatureID"
+    Lagom::GenerateCSSMediaFeatureID
+    "${CMAKE_CURRENT_SOURCE_DIR}/CSS/MediaFeatures.json"
+    ""
+    "CSS/MediaFeatureID.h"
+    "CSS/MediaFeatureID.cpp"
+    arguments -j "${CMAKE_CURRENT_SOURCE_DIR}/CSS/MediaFeatures.json"
 )
-add_custom_target(generate_MediaFeatureID.h DEPENDS CSS/MediaFeatureID.h)
-add_dependencies(all_generated generate_MediaFeatureID.h)
 
-add_custom_command(
-    OUTPUT CSS/MediaFeatureID.cpp
-    COMMAND ${CMAKE_COMMAND} -E make_directory CSS
-    COMMAND "$<TARGET_FILE:Lagom::Generate_CSS_MediaFeatureID_cpp>" "${CMAKE_CURRENT_SOURCE_DIR}/CSS/MediaFeatures.json" > CSS/MediaFeatureID.cpp.tmp
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different CSS/MediaFeatureID.cpp.tmp CSS/MediaFeatureID.cpp
-    COMMAND "${CMAKE_COMMAND}" -E remove CSS/MediaFeatureID.cpp.tmp
-    VERBATIM
-    DEPENDS Lagom::Generate_CSS_MediaFeatureID_cpp
-    MAIN_DEPENDENCY CSS/MediaFeatures.json
+invoke_generator(
+    "PropertyID"
+    Lagom::GenerateCSSPropertyID
+    "${CMAKE_CURRENT_SOURCE_DIR}/CSS/Properties.json"
+    ""
+    "CSS/PropertyID.h"
+    "CSS/PropertyID.cpp"
+    arguments -j "${CMAKE_CURRENT_SOURCE_DIR}/CSS/Properties.json"
 )
-add_custom_target(generate_MediaFeatureID.cpp DEPENDS CSS/MediaFeatureID.cpp)
-add_dependencies(all_generated generate_MediaFeatureID.cpp)
 
-add_custom_command(
-    OUTPUT CSS/PropertyID.h
-    COMMAND ${CMAKE_COMMAND} -E make_directory CSS
-    COMMAND "$<TARGET_FILE:Lagom::Generate_CSS_PropertyID_h>" "${CMAKE_CURRENT_SOURCE_DIR}/CSS/Properties.json" > CSS/PropertyID.h.tmp
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different CSS/PropertyID.h.tmp CSS/PropertyID.h
-    COMMAND "${CMAKE_COMMAND}" -E remove CSS/PropertyID.h.tmp
-    VERBATIM
-    DEPENDS Lagom::Generate_CSS_PropertyID_h
-    MAIN_DEPENDENCY CSS/Properties.json
+invoke_generator(
+    "ValueID"
+    Lagom::GenerateCSSValueID
+    "${CMAKE_CURRENT_SOURCE_DIR}/CSS/Identifiers.json"
+    ""
+    "CSS/ValueID.h"
+    "CSS/ValueID.cpp"
+    arguments -j "${CMAKE_CURRENT_SOURCE_DIR}/CSS/Identifiers.json"
 )
-add_custom_target(generate_PropertyID.h DEPENDS CSS/PropertyID.h)
-add_dependencies(all_generated generate_PropertyID.h)
-
-add_custom_command(
-    OUTPUT CSS/PropertyID.cpp
-    COMMAND ${CMAKE_COMMAND} -E make_directory CSS
-    COMMAND "$<TARGET_FILE:Lagom::Generate_CSS_PropertyID_cpp>" "${CMAKE_CURRENT_SOURCE_DIR}/CSS/Properties.json" > CSS/PropertyID.cpp.tmp
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different CSS/PropertyID.cpp.tmp CSS/PropertyID.cpp
-    COMMAND "${CMAKE_COMMAND}" -E remove CSS/PropertyID.cpp.tmp
-    VERBATIM
-    DEPENDS Lagom::Generate_CSS_PropertyID_cpp
-    MAIN_DEPENDENCY CSS/Properties.json
-)
-add_custom_target(generate_PropertyID.cpp DEPENDS CSS/PropertyID.cpp)
-add_dependencies(all_generated generate_PropertyID.cpp)
-
-add_custom_command(
-    OUTPUT CSS/ValueID.h
-    COMMAND "${CMAKE_COMMAND}" -E make_directory CSS
-    COMMAND "$<TARGET_FILE:Lagom::Generate_CSS_ValueID_h>" "${CMAKE_CURRENT_SOURCE_DIR}/CSS/Identifiers.json" > CSS/ValueID.h.tmp
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different CSS/ValueID.h.tmp CSS/ValueID.h
-    COMMAND "${CMAKE_COMMAND}" -E remove CSS/ValueID.h.tmp
-    VERBATIM
-    DEPENDS Lagom::Generate_CSS_ValueID_h
-    MAIN_DEPENDENCY CSS/Identifiers.json
-)
-add_custom_target(generate_ValueID.h DEPENDS CSS/ValueID.h)
-add_dependencies(all_generated generate_ValueID.h)
-
-add_custom_command(
-    OUTPUT CSS/ValueID.cpp
-    COMMAND "${CMAKE_COMMAND}" -E make_directory CSS
-    COMMAND "$<TARGET_FILE:Lagom::Generate_CSS_ValueID_cpp>" "${CMAKE_CURRENT_SOURCE_DIR}/CSS/Identifiers.json" > CSS/ValueID.cpp.tmp
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different CSS/ValueID.cpp.tmp CSS/ValueID.cpp
-    COMMAND "${CMAKE_COMMAND}" -E remove CSS/ValueID.cpp.tmp
-    VERBATIM
-    DEPENDS Lagom::Generate_CSS_ValueID_cpp
-    MAIN_DEPENDENCY CSS/Identifiers.json
-)
-add_custom_target(generate_ValueID.cpp DEPENDS CSS/ValueID.cpp)
-add_dependencies(all_generated generate_ValueID.cpp)
 
 add_custom_command(
     OUTPUT CSS/DefaultStyleSheetSource.cpp

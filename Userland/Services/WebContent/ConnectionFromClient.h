@@ -35,7 +35,7 @@ private:
     explicit ConnectionFromClient(NonnullOwnPtr<Core::Stream::LocalSocket>);
 
     Web::Page& page();
-    const Web::Page& page() const;
+    Web::Page const& page() const;
 
     virtual void update_system_theme(Core::AnonymousBuffer const&) override;
     virtual void update_system_fonts(String const&, String const&) override;
@@ -66,6 +66,8 @@ private:
     virtual void js_console_input(String const&) override;
     virtual void run_javascript(String const&) override;
     virtual void js_console_request_messages(i32) override;
+
+    virtual Messages::WebContentServer::GetLocalStorageEntriesResponse get_local_storage_entries() override;
 
     virtual Messages::WebContentServer::GetSelectedTextResponse get_selected_text() override;
     virtual void select_all() override;

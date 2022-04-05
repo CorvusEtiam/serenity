@@ -6,6 +6,7 @@
  */
 
 #include <AK/Assertions.h>
+#include <AK/CharacterTypes.h>
 #include <AK/Format.h>
 #include <AK/Utf8View.h>
 
@@ -22,7 +23,7 @@ Utf8CodePointIterator Utf8View::iterator_at_byte_offset(size_t byte_offset) cons
     return end();
 }
 
-size_t Utf8View::byte_offset_of(const Utf8CodePointIterator& it) const
+size_t Utf8View::byte_offset_of(Utf8CodePointIterator const& it) const
 {
     VERIFY(it.m_ptr >= begin_ptr());
     VERIFY(it.m_ptr <= end_ptr());
@@ -100,9 +101,9 @@ bool Utf8View::validate(size_t& valid_bytes) const
 {
     valid_bytes = 0;
     for (auto ptr = begin_ptr(); ptr < end_ptr(); ptr++) {
-        size_t code_point_length_in_bytes;
-        u32 value;
-        bool first_byte_makes_sense = decode_first_byte(*ptr, code_point_length_in_bytes, value);
+        size_t code_point_length_in_bytes = 0;
+        u32 code_point = 0;
+        bool first_byte_makes_sense = decode_first_byte(*ptr, code_point_length_in_bytes, code_point);
         if (!first_byte_makes_sense)
             return false;
 
@@ -112,7 +113,13 @@ bool Utf8View::validate(size_t& valid_bytes) const
                 return false;
             if (*ptr >> 6 != 2)
                 return false;
+
+            code_point <<= 6;
+            code_point |= *ptr & 63;
         }
+
+        if (!is_unicode(code_point))
+            return false;
 
         valid_bytes += code_point_length_in_bytes;
     }
@@ -129,7 +136,7 @@ size_t Utf8View::calculate_length() const
     return length;
 }
 
-bool Utf8View::starts_with(const Utf8View& start) const
+bool Utf8View::starts_with(Utf8View const& start) const
 {
     if (start.is_empty())
         return true;
@@ -156,7 +163,7 @@ bool Utf8View::contains(u32 needle) const
     return false;
 }
 
-Utf8View Utf8View::trim(const Utf8View& characters, TrimMode mode) const
+Utf8View Utf8View::trim(Utf8View const& characters, TrimMode mode) const
 {
     size_t substring_start = 0;
     size_t substring_length = byte_length();

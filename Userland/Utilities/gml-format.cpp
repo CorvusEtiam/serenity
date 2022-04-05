@@ -49,11 +49,11 @@ ErrorOr<bool> format_file(StringView path, bool inplace)
 ErrorOr<int> serenity_main(Main::Arguments args)
 {
 #ifdef __serenity__
-    TRY(Core::System::pledge("stdio rpath wpath cpath", nullptr));
+    TRY(Core::System::pledge("stdio rpath wpath cpath"));
 #endif
 
     bool inplace = false;
-    Vector<const char*> files;
+    Vector<char const*> files;
 
     Core::ArgsParser args_parser;
     args_parser.set_general_help("Format GML files.");
@@ -63,7 +63,7 @@ ErrorOr<int> serenity_main(Main::Arguments args)
 
 #ifdef __serenity__
     if (!inplace)
-        TRY(Core::System::pledge("stdio rpath", nullptr));
+        TRY(Core::System::pledge("stdio rpath"));
 #endif
 
     if (files.is_empty())

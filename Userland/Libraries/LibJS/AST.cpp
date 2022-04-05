@@ -1955,7 +1955,7 @@ void ScopeNode::dump(int indent) const
 
 void BinaryExpression::dump(int indent) const
 {
-    const char* op_string = nullptr;
+    char const* op_string = nullptr;
     switch (m_op) {
     case BinaryOp::Addition:
         op_string = "+";
@@ -2035,7 +2035,7 @@ void BinaryExpression::dump(int indent) const
 
 void LogicalExpression::dump(int indent) const
 {
-    const char* op_string = nullptr;
+    char const* op_string = nullptr;
     switch (m_op) {
     case LogicalOp::And:
         op_string = "&&";
@@ -2058,7 +2058,7 @@ void LogicalExpression::dump(int indent) const
 
 void UnaryExpression::dump(int indent) const
 {
-    const char* op_string = nullptr;
+    char const* op_string = nullptr;
     switch (m_op) {
     case UnaryOp::BitwiseNot:
         op_string = "~";
@@ -2153,7 +2153,7 @@ void ClassMethod::dump(int indent) const
     outln("(Key)");
     m_key->dump(indent + 1);
 
-    const char* kind_string = nullptr;
+    char const* kind_string = nullptr;
     switch (m_kind) {
     case Kind::Method:
         kind_string = "Method";
@@ -2346,7 +2346,7 @@ void FunctionDeclaration::dump(int indent) const
     FunctionNode::dump(indent, class_name());
 }
 
-ThrowCompletionOr<void> FunctionDeclaration::for_each_bound_name(ThrowCompletionOrVoidCallback<const FlyString&>&& callback) const
+ThrowCompletionOr<void> FunctionDeclaration::for_each_bound_name(ThrowCompletionOrVoidCallback<FlyString const&>&& callback) const
 {
     if (name().is_empty())
         return {};
@@ -2757,7 +2757,7 @@ Completion UpdateExpression::execute(Interpreter& interpreter, GlobalObject& glo
 
 void AssignmentExpression::dump(int indent) const
 {
-    const char* op_string = nullptr;
+    char const* op_string = nullptr;
     switch (m_op) {
     case AssignmentOp::Assignment:
         op_string = "=";
@@ -2818,7 +2818,7 @@ void AssignmentExpression::dump(int indent) const
 
 void UpdateExpression::dump(int indent) const
 {
-    const char* op_string = nullptr;
+    char const* op_string = nullptr;
     switch (m_op) {
     case UpdateOp::Increment:
         op_string = "++";
@@ -2903,7 +2903,7 @@ ThrowCompletionOr<void> VariableDeclaration::for_each_bound_name(ThrowCompletion
 
 void VariableDeclaration::dump(int indent) const
 {
-    const char* declaration_kind_string = nullptr;
+    char const* declaration_kind_string = nullptr;
     switch (m_declaration_kind) {
     case DeclarationKind::Let:
         declaration_kind_string = "Let";
@@ -2927,7 +2927,7 @@ void VariableDeclaration::dump(int indent) const
 void VariableDeclarator::dump(int indent) const
 {
     ASTNode::dump(indent);
-    m_target.visit([indent](const auto& value) { value->dump(indent + 1); });
+    m_target.visit([indent](auto const& value) { value->dump(indent + 1); });
     if (m_init)
         m_init->dump(indent + 1);
 }
@@ -3023,7 +3023,7 @@ Completion ObjectExpression::execute(Interpreter& interpreter, GlobalObject& glo
             object->define_direct_accessor(property_key, nullptr, &value.as_function(), Attribute::Configurable | Attribute::Enumerable);
             break;
         case ObjectProperty::Type::KeyValue:
-            object->define_direct_property(property_key, value, JS::default_attributes);
+            object->define_direct_property(property_key, value, default_attributes);
             break;
         case ObjectProperty::Type::Spread:
         default:
@@ -3104,7 +3104,7 @@ void OptionalChain::dump(int indent) const
     }
 }
 
-ThrowCompletionOr<OptionalChain::ReferenceAndValue> OptionalChain::to_reference_and_value(JS::Interpreter& interpreter, JS::GlobalObject& global_object) const
+ThrowCompletionOr<OptionalChain::ReferenceAndValue> OptionalChain::to_reference_and_value(Interpreter& interpreter, GlobalObject& global_object) const
 {
     auto base_reference = TRY(m_base->to_reference(interpreter, global_object));
     auto base = base_reference.is_unresolvable()

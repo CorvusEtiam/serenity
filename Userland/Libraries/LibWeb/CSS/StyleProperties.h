@@ -20,7 +20,7 @@ class StyleProperties : public RefCounted<StyleProperties> {
 public:
     StyleProperties() = default;
 
-    explicit StyleProperties(const StyleProperties&);
+    explicit StyleProperties(StyleProperties const&);
 
     static NonnullRefPtr<StyleProperties> create() { return adopt_ref(*new StyleProperties); }
 
@@ -65,6 +65,7 @@ public:
     Optional<CSS::FlexBasisData> flex_basis() const;
     float flex_grow() const;
     float flex_shrink() const;
+    int order() const;
     Optional<CSS::AlignItems> align_items() const;
     float opacity() const;
     Optional<CSS::Visibility> visibility() const;
@@ -92,10 +93,10 @@ public:
         m_font = move(font);
     }
 
-    float line_height(const Layout::Node&) const;
+    float line_height(Layout::Node const&) const;
 
-    bool operator==(const StyleProperties&) const;
-    bool operator!=(const StyleProperties& other) const { return !(*this == other); }
+    bool operator==(StyleProperties const&) const;
+    bool operator!=(StyleProperties const& other) const { return !(*this == other); }
 
     Optional<CSS::Position> position() const;
     Optional<int> z_index() const;

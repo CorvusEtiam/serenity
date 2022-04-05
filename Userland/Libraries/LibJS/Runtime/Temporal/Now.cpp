@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2021, Linus Groh <linusg@serenityos.org>
+ * Copyright (c) 2021-2022, Linus Groh <linusg@serenityos.org>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+#include <AK/Time.h>
 #include <LibCrypto/BigInt/SignedBigInteger.h>
 #include <LibJS/Runtime/Completion.h>
 #include <LibJS/Runtime/GlobalObject.h>
@@ -15,7 +16,6 @@
 #include <LibJS/Runtime/Temporal/PlainTime.h>
 #include <LibJS/Runtime/Temporal/TimeZone.h>
 #include <LibJS/Runtime/Temporal/ZonedDateTime.h>
-#include <time.h>
 
 namespace JS::Temporal {
 
@@ -114,7 +114,7 @@ JS_DEFINE_NATIVE_FUNCTION(Now::plain_date)
     auto* date_time = TRY(system_date_time(global_object, temporal_time_zone_like, calendar_like));
 
     // 2. Return ! CreateTemporalDate(dateTime.[[ISOYear]], dateTime.[[ISOMonth]], dateTime.[[ISODay]], dateTime.[[Calendar]]).
-    return TRY(create_temporal_date(global_object, date_time->iso_year(), date_time->iso_month(), date_time->iso_day(), date_time->calendar()));
+    return MUST(create_temporal_date(global_object, date_time->iso_year(), date_time->iso_month(), date_time->iso_day(), date_time->calendar()));
 }
 
 // 2.2.8 Temporal.Now.plainDateISO ( [ temporalTimeZoneLike ] ), https://tc39.es/proposal-temporal/#sec-temporal.now.plaindateiso
@@ -129,7 +129,7 @@ JS_DEFINE_NATIVE_FUNCTION(Now::plain_date_iso)
     auto* date_time = TRY(system_date_time(global_object, temporal_time_zone_like, calendar));
 
     // 3. Return ! CreateTemporalDate(dateTime.[[ISOYear]], dateTime.[[ISOMonth]], dateTime.[[ISODay]], dateTime.[[Calendar]]).
-    return TRY(create_temporal_date(global_object, date_time->iso_year(), date_time->iso_month(), date_time->iso_day(), date_time->calendar()));
+    return MUST(create_temporal_date(global_object, date_time->iso_year(), date_time->iso_month(), date_time->iso_day(), date_time->calendar()));
 }
 
 // 2.2.9 Temporal.Now.plainTimeISO ( [ temporalTimeZoneLike ] ), https://tc39.es/proposal-temporal/#sec-temporal.now.plaintimeiso
@@ -161,20 +161,12 @@ TimeZone* system_time_zone(GlobalObject& global_object)
 BigInt* system_utc_epoch_nanoseconds(GlobalObject& global_object)
 {
     // 1. Let ns be the approximate current UTC date and time, in nanoseconds since the epoch.
-    struct timespec now;
-    clock_gettime(CLOCK_REALTIME, &now);
-    Checked<i64> ns_timestamp;
-    ns_timestamp += now.tv_sec;
-    ns_timestamp *= 1'000'000'000;
-    ns_timestamp += now.tv_nsec;
-    if (ns_timestamp.has_overflow()) {
-        // TODO: Deal with this before 2262-04-21T00:47:16Z.
-        VERIFY_NOT_REACHED();
-    }
-    auto ns = Crypto::SignedBigInteger::create_from(ns_timestamp.value());
+    auto now = Time::now_realtime().to_nanoseconds();
+    auto ns = Crypto::SignedBigInteger::create_from(now);
 
     // 2. Set ns to the result of clamping ns between −8.64 × 10^21 and 8.64 × 10^21.
-    // Uhh, these don't even fit in an i64... ¯\_(ツ)_/¯
+    // NOTE: Time::to_nanoseconds() already clamps between −(2^63) and 2^63 − 1, the range of an i64,
+    //       if an overflow occurs during seconds -> nanoseconds conversion.
 
     // 3. Return ℤ(ns).
     return js_bigint(global_object.heap(), move(ns));

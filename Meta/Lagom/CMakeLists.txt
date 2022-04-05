@@ -68,6 +68,7 @@ add_compile_options(-Wall -Wextra -Werror)
 add_compile_options(-fPIC -g)
 add_compile_options(-Wno-maybe-uninitialized)
 add_compile_options(-fno-exceptions)
+add_compile_options(-fdiagnostics-color=always)
 if (NOT ENABLE_FUZZERS)
     add_compile_options(-fno-semantic-interposition)
 endif()
@@ -337,7 +338,7 @@ if (BUILD_LAGOM)
         LIBS LagomTLS
     )
 
-    # GFX
+    # Gfx
     file(GLOB LIBGFX_SOURCES CONFIGURE_DEPENDS "../../Userland/Libraries/LibGfx/*.cpp")
     file(GLOB LIBGFX_TTF_SOURCES CONFIGURE_DEPENDS "../../Userland/Libraries/LibGfx/TrueTypeFont/*.cpp")
     lagom_lib(Gfx gfx
@@ -387,7 +388,7 @@ if (BUILD_LAGOM)
     list(REMOVE_ITEM LIBJS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/../../Userland/Libraries/LibJS/SyntaxHighlighter.cpp")
     lagom_lib(JS js
         SOURCES ${LIBJS_SOURCES} ${LIBJS_SUBDIR_SOURCES} ${LIBJS_SUBSUBDIR_SOURCES}
-        LIBS m LagomCrypto LagomRegex LagomUnicode
+        LIBS m LagomCrypto LagomRegex LagomUnicode LagomTextCodec
     )
 
     # Line
@@ -618,6 +619,12 @@ if (BUILD_LAGOM)
         foreach(source ${LIBTLS_TESTS})
             lagom_test(${source} LIBS LagomTLS
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../Tests/LibTLS)
+        endforeach()
+
+        # TTF
+        file(GLOB LIBTTF_TESTS CONFIGURE_DEPENDS "../../Tests/LibTTF/*.cpp")
+        foreach(source ${LIBTTF_TESTS})
+            lagom_test(${source} LIBS LagomGfx)
         endforeach()
 
         # TimeZone

@@ -18,10 +18,12 @@
 #include <Kernel/Memory/PhysicalPage.h>
 #include <Kernel/Memory/PhysicalRegion.h>
 #include <Kernel/Memory/Region.h>
+#include <Kernel/Memory/RegionTree.h>
 #include <Kernel/Memory/VMObject.h>
 
 namespace Kernel {
 class PageDirectoryEntry;
+class PageTableEntry;
 }
 
 struct KmallocGlobalData;
@@ -133,6 +135,7 @@ class MemoryManager {
     friend class PageDirectory;
     friend class AnonymousVMObject;
     friend class Region;
+    friend class RegionTree;
     friend class VMObject;
     friend struct ::KmallocGlobalData;
 
@@ -185,7 +188,8 @@ public:
     ErrorOr<NonnullOwnPtr<Region>> allocate_kernel_region(size_t, StringView name, Region::Access access, AllocationStrategy strategy = AllocationStrategy::Reserve, Region::Cacheable = Region::Cacheable::Yes);
     ErrorOr<NonnullOwnPtr<Region>> allocate_kernel_region(PhysicalAddress, size_t, StringView name, Region::Access access, Region::Cacheable = Region::Cacheable::Yes);
     ErrorOr<NonnullOwnPtr<Region>> allocate_kernel_region_with_vmobject(VMObject&, size_t, StringView name, Region::Access access, Region::Cacheable = Region::Cacheable::Yes);
-    ErrorOr<NonnullOwnPtr<Region>> allocate_kernel_region_with_vmobject(VirtualRange const&, VMObject&, StringView name, Region::Access access, Region::Cacheable = Region::Cacheable::Yes);
+    ErrorOr<NonnullOwnPtr<Region>> allocate_unbacked_region_anywhere(size_t size, size_t alignment);
+    ErrorOr<NonnullOwnPtr<Region>> create_identity_mapped_region(PhysicalAddress, size_t);
 
     struct SystemMemoryInfo {
         PhysicalSize user_physical_pages { 0 };
@@ -251,7 +255,6 @@ private:
     void initialize_physical_pages();
     void register_reserved_ranges();
 
-    void register_kernel_region(Region&);
     void unregister_kernel_region(Region&);
 
     void protect_kernel_image();
@@ -296,7 +299,7 @@ private:
     PhysicalPageEntry* m_physical_page_entries { nullptr };
     size_t m_physical_page_entries_count { 0 };
 
-    IntrusiveRedBlackTree<&Region::m_tree_node> m_kernel_regions;
+    RegionTree m_region_tree;
 
     Vector<UsedMemoryRange> m_used_memory_ranges;
     Vector<PhysicalMemoryRange> m_physical_memory_ranges;

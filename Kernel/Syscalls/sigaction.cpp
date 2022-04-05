@@ -11,7 +11,7 @@
 
 namespace Kernel {
 
-ErrorOr<FlatPtr> Process::sys$sigprocmask(int how, Userspace<const sigset_t*> set, Userspace<sigset_t*> old_set)
+ErrorOr<FlatPtr> Process::sys$sigprocmask(int how, Userspace<sigset_t const*> set, Userspace<sigset_t*> old_set)
 {
     VERIFY_PROCESS_BIG_LOCK_ACQUIRED(this)
     TRY(require_promise(Pledge::sigaction));
@@ -50,7 +50,7 @@ ErrorOr<FlatPtr> Process::sys$sigpending(Userspace<sigset_t*> set)
     return 0;
 }
 
-ErrorOr<FlatPtr> Process::sys$sigaction(int signum, Userspace<const sigaction*> user_act, Userspace<sigaction*> user_old_act)
+ErrorOr<FlatPtr> Process::sys$sigaction(int signum, Userspace<sigaction const*> user_act, Userspace<sigaction*> user_old_act)
 {
     VERIFY_PROCESS_BIG_LOCK_ACQUIRED(this)
     TRY(require_promise(Pledge::sigaction));
@@ -156,11 +156,9 @@ ErrorOr<void> Process::remap_range_as_stack(FlatPtr address, size_t size)
             return EINVAL;
 
         // Remove the old region from our regions tree, since were going to add another region
-        // with the exact same start address, but do not deallocate it yet
+        // with the exact same start address.
         auto region = address_space().take_region(*old_region);
-
-        // Unmap the old region here, specifying that we *don't* want the VM deallocated.
-        region->unmap(Memory::Region::ShouldDeallocateVirtualRange::No);
+        region->unmap();
 
         // This vector is the region(s) adjacent to our range.
         // We need to allocate a new region for the range we wanted to change permission bits on.
@@ -184,10 +182,10 @@ ErrorOr<void> Process::remap_range_as_stack(FlatPtr address, size_t size)
         return {};
     }
 
-    if (const auto& regions = TRY(address_space().find_regions_intersecting(range_to_remap)); regions.size()) {
+    if (auto const& regions = TRY(address_space().find_regions_intersecting(range_to_remap)); regions.size()) {
         size_t full_size_found = 0;
         // Check that all intersecting regions are compatible.
-        for (const auto* region : regions) {
+        for (auto const* region : regions) {
             if (!region->is_mmap())
                 return EPERM;
             if (!region->vmobject().is_anonymous() || region->is_shared())
@@ -201,7 +199,7 @@ ErrorOr<void> Process::remap_range_as_stack(FlatPtr address, size_t size)
         // Finally, iterate over each region, either updating its access flags if the range covers it wholly,
         // or carving out a new subregion with the appropriate access flags set.
         for (auto* old_region : regions) {
-            const auto intersection_to_remap = range_to_remap.intersect(old_region->range());
+            auto const intersection_to_remap = range_to_remap.intersect(old_region->range());
             // If the region is completely covered by range, simply update the access flags
             if (intersection_to_remap == old_region->range()) {
                 old_region->unsafe_clear_access();
@@ -214,11 +212,9 @@ ErrorOr<void> Process::remap_range_as_stack(FlatPtr address, size_t size)
                 continue;
             }
             // Remove the old region from our regions tree, since were going to add another region
-            // with the exact same start address, but dont deallocate it yet
+            // with the exact same start address.
             auto region = address_space().take_region(*old_region);
-
-            // Unmap the old region here, specifying that we *don't* want the VM deallocated.
-            region->unmap(Memory::Region::ShouldDeallocateVirtualRange::No);
+            region->unmap();
 
             // This vector is the region(s) adjacent to our range.
             // We need to allocate a new region for the range we wanted to change permission bits on.
@@ -250,7 +246,7 @@ ErrorOr<void> Process::remap_range_as_stack(FlatPtr address, size_t size)
     return EINVAL;
 }
 
-ErrorOr<FlatPtr> Process::sys$sigaltstack(Userspace<const stack_t*> user_ss, Userspace<stack_t*> user_old_ss)
+ErrorOr<FlatPtr> Process::sys$sigaltstack(Userspace<stack_t const*> user_ss, Userspace<stack_t*> user_old_ss)
 {
     VERIFY_PROCESS_BIG_LOCK_ACQUIRED(this)
     TRY(require_promise(Pledge::sigaction));
@@ -299,7 +295,7 @@ ErrorOr<FlatPtr> Process::sys$sigaltstack(Userspace<const stack_t*> user_ss, Use
 }
 
 // https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigtimedwait.html
-ErrorOr<FlatPtr> Process::sys$sigtimedwait(Userspace<const sigset_t*> set, Userspace<siginfo_t*> info, Userspace<const timespec*> timeout)
+ErrorOr<FlatPtr> Process::sys$sigtimedwait(Userspace<sigset_t const*> set, Userspace<siginfo_t*> info, Userspace<timespec const*> timeout)
 {
     VERIFY_PROCESS_BIG_LOCK_ACQUIRED(this)
     TRY(require_promise(Pledge::sigaction));

@@ -501,6 +501,7 @@ class NodeFilterWrapper;
 class NodeIteratorWrapper;
 class NodeListWrapper;
 class NodeWrapper;
+class OptionConstructor;
 class PageTransitionEventWrapper;
 class PerformanceTimingWrapper;
 class PerformanceWrapper;
@@ -562,5 +563,6 @@ class XMLHttpRequestPrototype;
 class XMLHttpRequestWrapper;
 enum class CanPlayTypeResult;
 enum class DOMParserSupportedType;
+enum class ResizeObserverBoxOptions;
 enum class XMLHttpRequestResponseType;
 }

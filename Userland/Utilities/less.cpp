@@ -524,7 +524,7 @@ static void cat_file(FILE* file)
 
 ErrorOr<int> serenity_main(Main::Arguments arguments)
 {
-    TRY(Core::System::pledge("stdio rpath tty sigaction", nullptr));
+    TRY(Core::System::pledge("stdio rpath tty sigaction"));
 
     char const* filename = "-";
     char const* prompt = "?f%f :.(line %l)?e (END):.";
@@ -557,7 +557,7 @@ ErrorOr<int> serenity_main(Main::Arguments arguments)
         g_resized = true;
     });
 
-    TRY(Core::System::pledge("stdio tty", nullptr));
+    TRY(Core::System::pledge("stdio tty"));
 
     if (emulate_more) {
         // Configure options that match more's behavior
@@ -587,7 +587,7 @@ ErrorOr<int> serenity_main(Main::Arguments arguments)
             continue;
         }
 
-        const auto& sequence = sequence_value.value();
+        auto const& sequence = sequence_value.value();
 
         if (sequence.to_uint().has_value()) {
             modifier_buffer.append(sequence);

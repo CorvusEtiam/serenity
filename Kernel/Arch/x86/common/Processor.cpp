@@ -38,7 +38,7 @@ READONLY_AFTER_INIT FPUState Processor::s_clean_fpu_state;
 
 READONLY_AFTER_INIT static ProcessorContainer s_processors {};
 READONLY_AFTER_INIT Atomic<u32> Processor::g_total_processors;
-READONLY_AFTER_INIT static volatile bool s_smp_enabled;
+READONLY_AFTER_INIT static bool volatile s_smp_enabled;
 
 static Atomic<ProcessorMessage*> s_message_pool;
 Atomic<u32> Processor::s_idle_cpu_mask { 0 };
@@ -596,22 +596,6 @@ UNMAP_AFTER_INIT void Processor::cpu_setup()
 #endif
 }
 
-NonnullOwnPtr<KString> Processor::features_string() const
-{
-    StringBuilder builder;
-    bool first = true;
-    for (auto feature = CPUFeature::Type(1u); feature != CPUFeature::__End; feature <<= 1u) {
-        if (has_feature(feature)) {
-            if (first)
-                first = false;
-            else
-                MUST(builder.try_append(' '));
-            MUST(builder.try_append(cpu_feature_to_string_view(feature)));
-        }
-    }
-    return KString::must_create(builder.string_view());
-}
-
 UNMAP_AFTER_INIT void Processor::early_initialize(u32 cpu)
 {
     m_self = this;
@@ -651,7 +635,9 @@ UNMAP_AFTER_INIT void Processor::initialize(u32 cpu)
     VERIFY(m_self == this);
     VERIFY(&current() == this); // sanity check
 
-    dmesgln("CPU[{}]: Supported features: {}", current_id(), features_string());
+    m_info = new ProcessorInfo(*this);
+
+    dmesgln("CPU[{}]: Supported features: {}", current_id(), m_info->features_string());
     if (!has_feature(CPUFeature::RDRAND))
         dmesgln("CPU[{}]: No RDRAND support detected, randomness will be poor", current_id());
     dmesgln("CPU[{}]: Physical address bit width: {}", current_id(), m_physical_address_bit_width);
@@ -680,8 +666,6 @@ UNMAP_AFTER_INIT void Processor::initialize(u32 cpu)
             detect_hypervisor();
     }
 
-    m_info = new ProcessorInfo(*this);
-
     {
         // We need to prevent races between APs starting up at the same time
         VERIFY(cpu < s_processors.size());
@@ -692,18 +676,10 @@ UNMAP_AFTER_INIT void Processor::initialize(u32 cpu)
 UNMAP_AFTER_INIT void Processor::detect_hypervisor()
 {
     CPUID hypervisor_leaf_range(0x40000000);
+    auto hypervisor_vendor_id_string = m_info->hypervisor_vendor_id_string();
+    dmesgln("CPU[{}]: CPUID hypervisor signature '{}', max leaf {:#x}", current_id(), hypervisor_vendor_id_string, hypervisor_leaf_range.eax());
 
-    // Get signature of hypervisor.
-    alignas(sizeof(u32)) char hypervisor_signature_buffer[13];
-    *reinterpret_cast<u32*>(hypervisor_signature_buffer) = hypervisor_leaf_range.ebx();
-    *reinterpret_cast<u32*>(hypervisor_signature_buffer + 4) = hypervisor_leaf_range.ecx();
-    *reinterpret_cast<u32*>(hypervisor_signature_buffer + 8) = hypervisor_leaf_range.edx();
-    hypervisor_signature_buffer[12] = '\0';
-    StringView hypervisor_signature(hypervisor_signature_buffer);
-
-    dmesgln("CPU[{}]: CPUID hypervisor signature '{}' ({:#x} {:#x} {:#x}), max leaf {:#x}", current_id(), hypervisor_signature, hypervisor_leaf_range.ebx(), hypervisor_leaf_range.ecx(), hypervisor_leaf_range.edx(), hypervisor_leaf_range.eax());
-
-    if (hypervisor_signature == "Microsoft Hv"sv)
+    if (hypervisor_vendor_id_string == "Microsoft Hv"sv)
         detect_hypervisor_hyperv(hypervisor_leaf_range);
 }
 
@@ -775,7 +751,7 @@ void Processor::flush_gdt()
                  : "memory");
 }
 
-const DescriptorTablePointer& Processor::get_gdtr()
+DescriptorTablePointer const& Processor::get_gdtr()
 {
     return m_gdtr;
 }

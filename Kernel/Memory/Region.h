@@ -14,7 +14,7 @@
 #include <Kernel/Forward.h>
 #include <Kernel/KString.h>
 #include <Kernel/Memory/PageFaultResponse.h>
-#include <Kernel/Memory/VirtualRangeAllocator.h>
+#include <Kernel/Memory/VirtualRange.h>
 #include <Kernel/Sections.h>
 #include <Kernel/UnixTypes.h>
 
@@ -31,7 +31,9 @@ enum class ShouldFlushTLB {
 
 class Region final
     : public Weakable<Region> {
+    friend class AddressSpace;
     friend class MemoryManager;
+    friend class RegionTree;
 
 public:
     enum Access : u8 {
@@ -53,7 +55,8 @@ public:
     };
 
     static ErrorOr<NonnullOwnPtr<Region>> try_create_user_accessible(VirtualRange const&, NonnullRefPtr<VMObject>, size_t offset_in_vmobject, OwnPtr<KString> name, Region::Access access, Cacheable, bool shared);
-    static ErrorOr<NonnullOwnPtr<Region>> try_create_kernel_only(VirtualRange const&, NonnullRefPtr<VMObject>, size_t offset_in_vmobject, OwnPtr<KString> name, Region::Access access, Cacheable = Cacheable::Yes);
+    static ErrorOr<NonnullOwnPtr<Region>> create_unbacked();
+    static ErrorOr<NonnullOwnPtr<Region>> create_unplaced(NonnullRefPtr<VMObject>, size_t offset_in_vmobject, OwnPtr<KString> name, Region::Access access, Cacheable = Cacheable::Yes, bool shared = false);
 
     ~Region();
 
@@ -179,12 +182,8 @@ public:
 
     void set_page_directory(PageDirectory&);
     ErrorOr<void> map(PageDirectory&, ShouldFlushTLB = ShouldFlushTLB::Yes);
-    enum class ShouldDeallocateVirtualRange {
-        No,
-        Yes,
-    };
-    void unmap(ShouldDeallocateVirtualRange, ShouldFlushTLB = ShouldFlushTLB::Yes);
-    void unmap_with_locks_held(ShouldDeallocateVirtualRange, ShouldFlushTLB, SpinlockLocker<RecursiveSpinlock>& pd_locker, SpinlockLocker<RecursiveSpinlock>& mm_locker);
+    void unmap(ShouldFlushTLB = ShouldFlushTLB::Yes);
+    void unmap_with_locks_held(ShouldFlushTLB, SpinlockLocker<RecursiveSpinlock>& pd_locker, SpinlockLocker<RecursiveSpinlock>& mm_locker);
 
     void remap();
 
@@ -196,6 +195,8 @@ public:
     void set_syscall_region(bool b) { m_syscall_region = b; }
 
 private:
+    Region();
+    Region(NonnullRefPtr<VMObject>, size_t offset_in_vmobject, OwnPtr<KString>, Region::Access access, Cacheable, bool shared);
     Region(VirtualRange const&, NonnullRefPtr<VMObject>, size_t offset_in_vmobject, OwnPtr<KString>, Region::Access access, Cacheable, bool shared);
 
     [[nodiscard]] bool remap_vmobject_page(size_t page_index, bool with_flush = true);
@@ -218,7 +219,7 @@ private:
     RefPtr<PageDirectory> m_page_directory;
     VirtualRange m_range;
     size_t m_offset_in_vmobject { 0 };
-    NonnullRefPtr<VMObject> m_vmobject;
+    RefPtr<VMObject> m_vmobject;
     OwnPtr<KString> m_name;
     u8 m_access { Region::None };
     bool m_shared : 1 { false };
