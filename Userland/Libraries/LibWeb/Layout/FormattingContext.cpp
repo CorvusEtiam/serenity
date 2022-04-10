@@ -204,6 +204,10 @@ float FormattingContext::compute_auto_height_for_block_level_element(FormattingS
 
     auto const& box_state = state.get(box);
 
+    auto display = box.computed_values().display();
+    if (display.is_flex_inside())
+        return box_state.content_height;
+
     // https://www.w3.org/TR/CSS22/visudet.html#normal-block
     // 10.6.3 Block-level non-replaced elements in normal flow when 'overflow' computes to 'visible'
 
@@ -816,8 +820,14 @@ FormattingState::IntrinsicSizes FormattingContext::calculate_intrinsic_sizes(Lay
         VERIFY(independent_formatting_context);
 
         independent_formatting_context->run(box, LayoutMode::MaxContent);
-        cached_box_sizes.max_content_size.set_width(independent_formatting_context->greatest_child_width(box));
-        cached_box_sizes.max_content_size.set_height(compute_intrinsic_height(throwaway_state, box));
+
+        if (independent_formatting_context->type() == FormattingContext::Type::Flex) {
+            auto const& box_state = throwaway_state.get(box);
+            cached_box_sizes.max_content_size = { box_state.content_width, box_state.content_height };
+        } else {
+            cached_box_sizes.max_content_size.set_width(independent_formatting_context->greatest_child_width(box));
+            cached_box_sizes.max_content_size.set_height(calculate_auto_height(throwaway_state, box));
+        }
     }
 
     {
@@ -828,8 +838,13 @@ FormattingState::IntrinsicSizes FormattingContext::calculate_intrinsic_sizes(Lay
         auto independent_formatting_context = const_cast<FormattingContext*>(this)->create_independent_formatting_context_if_needed(throwaway_state, box);
         VERIFY(independent_formatting_context);
         independent_formatting_context->run(box, LayoutMode::MinContent);
-        cached_box_sizes.min_content_size.set_width(independent_formatting_context->greatest_child_width(box));
-        cached_box_sizes.min_content_size.set_height(compute_intrinsic_height(throwaway_state, box));
+        if (independent_formatting_context->type() == FormattingContext::Type::Flex) {
+            auto const& box_state = throwaway_state.get(box);
+            cached_box_sizes.min_content_size = { box_state.content_width, box_state.content_height };
+        } else {
+            cached_box_sizes.min_content_size.set_width(independent_formatting_context->greatest_child_width(box));
+            cached_box_sizes.min_content_size.set_height(calculate_auto_height(throwaway_state, box));
+        }
     }
 
     if (cached_box_sizes.min_content_size.width() > cached_box_sizes.max_content_size.width()) {
@@ -889,7 +904,7 @@ float FormattingContext::calculate_fit_content_height(Layout::Box const& box, Op
     return calculate_fit_content_size(min_content_size, max_content_size, available_space);
 }
 
-float FormattingContext::compute_intrinsic_height(FormattingState const& state, Box const& box)
+float FormattingContext::calculate_auto_height(FormattingState const& state, Box const& box)
 {
     if (is<ReplacedBox>(box)) {
         return compute_height_for_replaced_element(state, verify_cast<ReplacedBox>(box));

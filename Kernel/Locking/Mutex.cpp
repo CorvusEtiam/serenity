@@ -90,6 +90,7 @@ void Mutex::lock(Mode mode, [[maybe_unused]] LockLocation const& location)
         return;
     }
     case Mode::Shared: {
+        VERIFY(m_behavior == MutexBehavior::Regular);
         VERIFY(!m_holder);
         if (mode == Mode::Exclusive) {
             dbgln_if(LOCK_TRACE_DEBUG, "Mutex::lock @ {} ({}): blocking for exclusive access, currently shared, locks held {}", this, m_name, m_times_locked);
@@ -207,9 +208,15 @@ void Mutex::block(Thread& current_thread, Mode mode, SpinlockLocker<Spinlock>& l
     if constexpr (LOCK_IN_CRITICAL_DEBUG)
         VERIFY_INTERRUPTS_ENABLED();
     m_blocked_thread_lists.with([&](auto& lists) {
-        auto& list = lists.list_for_mode(mode);
-        VERIFY(!list.contains(current_thread));
-        list.append(current_thread);
+        auto append_to_list = [&]<typename L>(L& list) {
+            VERIFY(!list.contains(current_thread));
+            list.append(current_thread);
+        };
+
+        if (m_behavior == MutexBehavior::BigLock)
+            append_to_list(lists.exclusive_big_lock);
+        else
+            append_to_list(lists.list_for_mode(mode));
     });
 
     dbgln_if(LOCK_TRACE_DEBUG, "Mutex::lock @ {} ({}) waiting...", this, m_name);
@@ -217,9 +224,15 @@ void Mutex::block(Thread& current_thread, Mode mode, SpinlockLocker<Spinlock>& l
     dbgln_if(LOCK_TRACE_DEBUG, "Mutex::lock @ {} ({}) waited", this, m_name);
 
     m_blocked_thread_lists.with([&](auto& lists) {
-        auto& list = lists.list_for_mode(mode);
-        VERIFY(list.contains(current_thread));
-        list.remove(current_thread);
+        auto remove_from_list = [&]<typename L>(L& list) {
+            VERIFY(list.contains(current_thread));
+            list.remove(current_thread);
+        };
+
+        if (m_behavior == MutexBehavior::BigLock)
+            remove_from_list(lists.exclusive_big_lock);
+        else
+            remove_from_list(lists.list_for_mode(mode));
     });
 }
 
@@ -229,12 +242,10 @@ void Mutex::unblock_waiters(Mode previous_mode)
     VERIFY(m_mode == Mode::Unlocked);
 
     m_blocked_thread_lists.with([&](auto& lists) {
-        if (lists.exclusive.is_empty() && lists.shared.is_empty())
-            return;
-
         auto unblock_shared = [&]() {
             if (lists.shared.is_empty())
                 return false;
+            VERIFY(m_behavior == MutexBehavior::Regular);
             m_mode = Mode::Shared;
             for (auto& thread : lists.shared) {
                 auto requested_locks = thread.unblock_from_mutex(*this);
@@ -247,8 +258,8 @@ void Mutex::unblock_waiters(Mode previous_mode)
             }
             return true;
         };
-        auto unblock_exclusive = [&]() {
-            if (auto* next_exclusive_thread = lists.exclusive.first()) {
+        auto unblock_exclusive = [&]<typename L>(L& list) {
+            if (auto* next_exclusive_thread = list.first()) {
                 m_mode = Mode::Exclusive;
                 m_times_locked = next_exclusive_thread->unblock_from_mutex(*this);
                 m_holder = next_exclusive_thread;
@@ -257,11 +268,13 @@ void Mutex::unblock_waiters(Mode previous_mode)
             return false;
         };
 
-        if (previous_mode == Mode::Exclusive) {
+        if (m_behavior == MutexBehavior::BigLock) {
+            unblock_exclusive(lists.exclusive_big_lock);
+        } else if (previous_mode == Mode::Exclusive) {
             if (!unblock_shared())
-                unblock_exclusive();
+                unblock_exclusive(lists.exclusive);
         } else {
-            if (!unblock_exclusive())
+            if (!unblock_exclusive(lists.exclusive))
                 unblock_shared();
         }
     });
@@ -269,9 +282,11 @@ void Mutex::unblock_waiters(Mode previous_mode)
 
 auto Mutex::force_unlock_exclusive_if_locked(u32& lock_count_to_restore) -> Mode
 {
+    VERIFY(m_behavior == MutexBehavior::BigLock);
     // NOTE: This may be called from an interrupt handler (not an IRQ handler)
     // and also from within critical sections!
     VERIFY(!Processor::current_in_irq());
+
     auto* current_thread = Thread::current();
     SpinlockLocker lock(m_lock);
     auto current_mode = m_mode;
@@ -306,8 +321,10 @@ auto Mutex::force_unlock_exclusive_if_locked(u32& lock_count_to_restore) -> Mode
 
 void Mutex::restore_exclusive_lock(u32 lock_count, [[maybe_unused]] LockLocation const& location)
 {
+    VERIFY(m_behavior == MutexBehavior::BigLock);
     VERIFY(lock_count > 0);
     VERIFY(!Processor::current_in_irq());
+
     auto* current_thread = Thread::current();
     bool did_block = false;
     SpinlockLocker lock(m_lock);

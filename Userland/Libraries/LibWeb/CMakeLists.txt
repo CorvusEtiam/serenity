@@ -9,11 +9,14 @@ set(SOURCES
     Bindings/EventWrapperFactory.cpp
     Bindings/IDLAbstractOperations.cpp
     Bindings/ImageConstructor.cpp
+    Bindings/LocationConstructor.cpp
     Bindings/LocationObject.cpp
     Bindings/MainThreadVM.cpp
+    Bindings/NavigatorConstructor.cpp
     Bindings/NavigatorObject.cpp
     Bindings/NodeWrapperFactory.cpp
     Bindings/OptionConstructor.cpp
+    Bindings/WindowConstructor.cpp
     Bindings/WindowObject.cpp
     Bindings/WindowProxy.cpp
     Bindings/Wrappable.cpp
@@ -230,7 +233,6 @@ set(SOURCES
     HTML/WorkerLocation.cpp
     HighResolutionTime/Performance.cpp
     ImageDecoding.cpp
-    InProcessWebView.cpp
     IntersectionObserver/IntersectionObserver.cpp
     Layout/BlockContainer.cpp
     Layout/BlockFormattingContext.cpp
@@ -278,6 +280,7 @@ set(SOURCES
     Loader/ImageLoader.cpp
     Loader/ImageResource.cpp
     Loader/LoadRequest.cpp
+    Loader/ProxyMappings.cpp
     Loader/Resource.cpp
     Loader/ResourceLoader.cpp
     MimeSniff/MimeType.cpp

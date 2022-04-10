@@ -89,6 +89,7 @@ class Time;
 class TimePercentage;
 class TimeStyleValue;
 class TransformationStyleValue;
+class UnicodeRange;
 class UnresolvedStyleValue;
 class UnsetStyleValue;
 }
@@ -346,7 +347,6 @@ namespace Web {
 class EditEventHandler;
 class EventHandler;
 class FrameLoader;
-class InProcessWebView;
 class LoadRequest;
 class Origin;
 class OutOfProcessWebView;
